@@ -294,3 +294,29 @@ class Edatool(object):
         except subprocess.CalledProcessError:
             _s = "'{}' exited with an error code"
             raise RuntimeError(_s.format(cmd))
+
+    def _write_fileset_to_f_file(self, output_file):
+        """ Write a file list (*.f) file """
+
+        with open(output_file, 'w') as f:
+            (src_files, incdirs) = self._get_fileset_files()
+
+            for key, value in self.vlogdefine.items():
+                define_str = self._param_value_str(param_value = value)
+                f.write('+define+{}={}\n'.format(key, define_str))
+
+            for key, value in self.vlogparam.items():
+                param_str = self._param_value_str(param_value = value, str_quote_style = '"')
+                f.write('+parameter+{}.{}={}\n'.format(self.toplevel, key, param_str))
+
+            for id in incdirs:
+                f.write("+incdir+" + id + '\n')
+
+            for src_file in src_files:
+                if (src_file.file_type.startswith("verilogSource") or src_file.file_type.startswith("systemVerilogSource")):
+                    f.write(src_file.name + '\n')
+                elif src_file.file_type == 'user':
+                    pass
+                else:
+                    _s = "{} has unknown file type '{}'"
+                    logger.warning(_s.format(src_file.name, src_file.file_type))
